@@ -27,15 +27,17 @@ func TestKeysizesByDistance(t *testing.T) {
 		t.Fatal(err)
 	}
 	// For this cryptotext, the keysize appears to be 20.  So we expect that
-	// keysize to be in the top 4 candidates for a variety of block counts.
+	// keysize to be in the top 5 candidates for all block counts.  (Indeed,
+	// experimentation shows that it's in the top 4 candidates for all block
+	// counts except 30.)
 	want := 20
-	for _, cnt := range []int{4, 10, 30, 50} {
+	for cnt := 4; cnt <= 50; cnt++ {
 		k, err := keysizesByDistance(b, cnt)
 		if err != nil {
 			t.Fatal(err)
 		}
 		found := false
-		for i := range k {
+		for i := range k[:5] {
 			found = found || k[i].size == want
 		}
 		if !found {
