@@ -45,3 +45,14 @@ func TestKeysizesByDistance(t *testing.T) {
 		}
 	}
 }
+
+func TestFindKey(t *testing.T) {
+	const keysize = 20
+	b, err := ioutil.ReadFile(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	k := findKey(b, keysize)
+	t.Logf(k)
+	t.Fail()
+}

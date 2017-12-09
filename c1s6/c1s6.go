@@ -1,6 +1,8 @@
 package c1s6
 
 import (
+	"c1s3"
+
 	"errors"
 	"sort"
 )
@@ -75,4 +77,17 @@ func keysizesByDistance(b []byte, cnt int) (keysizes, error) {
 	}
 	sort.Sort(result)
 	return result, nil
+}
+
+func findKey(b []byte, keysize int) []byte {
+	var key []byte
+	for i := 0; i < keysize; i++ {
+		var c []byte
+		for k := i; k < len(b); k += keysize {
+			c = append(c, b[k])
+		}
+		ts := c1s3.FindPlaintext(c, 1)
+		key = append(key, ts[0])
+	}
+	return key
 }
