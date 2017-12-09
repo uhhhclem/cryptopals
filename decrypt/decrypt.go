@@ -3,6 +3,7 @@
 package decrypt
 
 import (
+	"errors"
 	"sort"
 	"strings"
 )
@@ -24,6 +25,7 @@ func DefaultScoreMap() ScoreMap {
 		"D": 1,
 		"L": 1,
 		"U": 1,
+		" ": 1,
 	}
 	result := map[byte]int{}
 	for k, v := range raw {
@@ -76,6 +78,29 @@ func FindPlaintext(c []byte, n int, m ScoreMap) [][]byte {
 	return result
 }
 
+// FindSingleByteKey finds the byte that produces the highest-scoring plaintext
+// when XORed with every byte of a cryptotext.
+func FindSingleByteKey(c []byte, m ScoreMap) (byte, error) {
+	var (
+		key       byte
+		highScore int
+		found     bool
+	)
+	for i := 0; i < 256; i++ {
+		b := EncryptSingleByteXOR(c, byte(i))
+		s := ScorePlaintext(b, m)
+		if s >= highScore {
+			highScore = s
+			key = byte(i)
+			found = true
+		}
+	}
+	if found {
+		return key, nil
+	}
+	return 0, errors.New("no key found")
+}
+
 // EncryptSingleByteXOR encrypts t by XORing each byte in it with k.
 func EncryptSingleByteXOR(t []byte, k byte) []byte {
 	b := make([]byte, len(t))
@@ -83,4 +108,14 @@ func EncryptSingleByteXOR(t []byte, k byte) []byte {
 		b[i] = t[i] ^ k
 	}
 	return b
+}
+
+// RepeatingKeyXOR transforms t by cyclically XORing each byte in it with
+// a byte from k.
+func RepeatingKeyXOR(t []byte, k []byte) []byte {
+	result := make([]byte, len(t))
+	for i := 0; i < len(t); i++ {
+		result[i] = t[i] ^ k[i%len(k)]
+	}
+	return result
 }

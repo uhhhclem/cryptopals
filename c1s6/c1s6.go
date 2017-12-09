@@ -1,9 +1,10 @@
 package c1s6
 
 import (
-	"c1s3"
+	"decrypt"
 
 	"errors"
+	"fmt"
 	"sort"
 )
 
@@ -79,15 +80,24 @@ func keysizesByDistance(b []byte, cnt int) (keysizes, error) {
 	return result, nil
 }
 
-func findKey(b []byte, keysize int) []byte {
-	var key []byte
+func findKey(b []byte, keysize int) ([]byte, error) {
+	m := decrypt.DefaultScoreMap()
+	key := make([]byte, keysize)
+	// We expect that b is encrypted with repeating-byte XOR using a key that's
+	// keysize bytes long.  To find the key, we need to find the bytes that
+	// were encrypted by byte i of the key, find the single-byte key that
+	// will decrypt those bytes, and then set byte i of the key to that value.
 	for i := 0; i < keysize; i++ {
 		var c []byte
 		for k := i; k < len(b); k += keysize {
 			c = append(c, b[k])
 		}
-		ts := c1s3.FindPlaintext(c, 1)
-		key = append(key, ts[0])
+		k, err := decrypt.FindSingleByteKey(c, m)
+		if err != nil {
+			return nil, err
+		}
+		fmt.Printf("%d: %s\n", k, string(decrypt.EncryptSingleByteXOR(c, k)))
+		key[i] = k
 	}
-	return key
+	return key, nil
 }

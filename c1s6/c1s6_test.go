@@ -1,6 +1,7 @@
 package c1s6
 
 import (
+	"decrypt"
 	"io/ioutil"
 	"testing"
 )
@@ -52,7 +53,12 @@ func TestFindKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	k := findKey(b, keysize)
-	t.Logf(k)
+	k, err := findKey(b, keysize)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("%v", k)
+	p := decrypt.RepeatingKeyXOR(b, k)
+	t.Log(string(p))
 	t.Fail()
 }
