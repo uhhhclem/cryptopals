@@ -2,7 +2,9 @@ package c1s6
 
 import (
 	"decrypt"
+	"encoding/base64"
 	"io/ioutil"
+	"strings"
 	"testing"
 )
 
@@ -23,33 +25,35 @@ func TestHammingDistance(t *testing.T) {
 }
 
 func TestKeysizesByDistance(t *testing.T) {
-	b, err := ioutil.ReadFile(filename)
+	f, err := ioutil.ReadFile(filename)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// For this cryptotext, the keysize appears to be 20.  So we expect that
-	// keysize to be in the top 5 candidates for all block counts.  (Indeed,
-	// experimentation shows that it's in the top 4 candidates for all block
-	// counts except 30.)
-	want := 20
+	b, err := base64.StdEncoding.DecodeString(string(f))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cnts := map[int]int{}
 	for cnt := 4; cnt <= 50; cnt++ {
 		k, err := keysizesByDistance(b, cnt)
 		if err != nil {
 			t.Fatal(err)
 		}
-		found := false
-		for i := range k[:5] {
-			found = found || k[i].size == want
-		}
-		if !found {
-			t.Errorf("keysizesByDistance(b, %d): keysize of %d not found in top 4\n%v", cnt, want, k)
-		}
+		cnts[k[0].size] += 1
+	}
+	if got, want := cnts[29], 41; got != want {
+		t.Errorf("Expected keysize of 29 to appear %d times (got %d)", want, got)
 	}
 }
 
 func TestFindKey(t *testing.T) {
-	const keysize = 20
-	b, err := ioutil.ReadFile(filename)
+	const keysize = 29
+	f, err := ioutil.ReadFile(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := base64.StdEncoding.DecodeString(string(f))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,8 +61,8 @@ func TestFindKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("%v", k)
 	p := decrypt.RepeatingKeyXOR(b, k)
-	t.Log(string(p))
-	t.Fail()
+	if strings.Index(string(p), "Play that funky music, white boy") < 0 {
+		t.Fail()
+	}
 }
